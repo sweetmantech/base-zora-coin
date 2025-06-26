@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { useWriteContract, useSimulateContract, useWaitForTransactionReceipt } from 'wagmi';
+
 import { createCoinCall, DeployCurrency, ValidMetadataURI } from '@zoralabs/coins-sdk';
 import { baseSepolia } from 'wagmi/chains';
 import { Address } from 'viem';
@@ -26,17 +27,28 @@ export function CreateCoin() {
   }, [address]);
 
   // Get the contract call configuration
-  const contractCallParams = useMemo(() => {
-    if (!coinParams) return null;
-    
-    try {
-      const params = createCoinCall(coinParams);
-      console.log('Contract call params:', params);
-      return params;
-    } catch (error) {
-      console.error('Error creating coin call:', error);
-      return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [contractCallParams, setContractCallParams] = useState<any>(null);
+  
+  // Create contract call params when coinParams change
+  useEffect(() => {
+    if (!coinParams) {
+      setContractCallParams(null);
+      return;
     }
+    
+    const createParams = async () => {
+      try {
+        const params = await createCoinCall(coinParams);
+        console.log('Contract call params:', params);
+        setContractCallParams(params);
+      } catch (error) {
+        console.error('Error creating coin call:', error);
+        setContractCallParams(null);
+      }
+    };
+    
+    createParams();
   }, [coinParams]);
 
   // Simulate the contract call
@@ -75,7 +87,7 @@ export function CreateCoin() {
   });
 
   const handleCreateCoin = async () => {
-    if (!address) return;
+    if (!address || !contractCallParams) return;
     
     setIsCreating(true);
     try {
@@ -83,11 +95,9 @@ export function CreateCoin() {
         // Use simulation data if available
         writeContract(simulateData.request);
       } else {
-        // Proceed without simulation
+        // Proceed without simulation - use the contract call params directly
         console.log('Proceeding without simulation...');
-        writeContract({
-          ...contractCallParams,
-        });
+        writeContract(contractCallParams);
       }
     } catch (error) {
       console.error('Error creating coin:', error);
