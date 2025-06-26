@@ -10,7 +10,6 @@ import { Address } from 'viem';
 export function CreateCoin() {
   const { address, isConnected } = useAccount();
   const [isCreating, setIsCreating] = useState(false);
-  const [lastTxHash, setLastTxHash] = useState<string | null>(null);
 
   // Hard-coded coin parameters for testing
   const coinParams = {
@@ -55,9 +54,6 @@ export function CreateCoin() {
     setIsCreating(true);
     try {
       writeContract(simulateData.request);
-      if (txHash) {
-        setLastTxHash(txHash);
-      }
     } catch (error) {
       console.error('Error creating coin:', error);
     } finally {
