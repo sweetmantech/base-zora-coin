@@ -60,7 +60,7 @@ export default function Home() {
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="font-medium text-gray-700">Symbol:</span>
-                  <span className="ml-2 text-gray-600">CS005</span>
+                  <span className="ml-2 text-gray-600">CaseStudy005—NewDay</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Content Type:</span>
@@ -129,7 +129,7 @@ export default function Home() {
               <div className="space-y-2 text-sm">
                 <div>
                   <span className="font-medium text-gray-700">Symbol:</span>
-                  <span className="ml-2 text-gray-600">CS005</span>
+                  <span className="ml-2 text-gray-600">CaseStudy005—NewDay</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-700">Content Type:</span>

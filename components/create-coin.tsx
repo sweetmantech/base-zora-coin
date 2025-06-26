@@ -19,8 +19,8 @@ export function CreateCoin() {
     
     return {
       name: "Case Study 005 — New Day",
-      symbol: "CS005", 
-      uri: "https://5psa5rdvyavyycpsz2ephakccbzh5hnbm3a4h552dqp5iocfkfza.arweave.net/6-QOxHXAK4wJ8s6I84FCEHJ-naFmwcP3uhwf1DhFUXI" as ValidMetadataURI, // Actual metadata URI
+      symbol: "CaseStudy005—NewDay", 
+      uri: "https://arweave.net/6-QOxHXAK4wJ8s6I84FCEHJ-naFmwcP3uhwf1DhFUXI" as ValidMetadataURI, // Actual metadata URI
       payoutRecipient: address as Address,
       chainId: baseSepolia.id,
       currency: DeployCurrency.ETH, // Using ETH since ZORA is not supported on Base Sepolia
@@ -144,7 +144,7 @@ export function CreateCoin() {
         </div>
         <div className="text-sm">
           <span className="font-medium text-gray-600">Symbol:</span>
-          <span className="ml-2">{coinParams?.symbol || 'CS005'}</span>
+          <span className="ml-2">{coinParams?.symbol || 'CaseStudy005—NewDay'}</span>
         </div>
         <div className="text-sm">
           <span className="font-medium text-gray-600">Target Network:</span>
