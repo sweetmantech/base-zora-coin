@@ -54,10 +54,6 @@ export default function Home() {
       >
         Connect Wallet
       </button>
-      
-      <p className="text-sm text-gray-500 text-center max-w-md">
-        Supported wallets: MetaMask, Coinbase Wallet, WalletConnect, and more
-      </p>
     </div>
   );
 }
