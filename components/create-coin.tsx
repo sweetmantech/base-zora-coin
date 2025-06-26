@@ -18,9 +18,9 @@ export function CreateCoin() {
     if (!address) return null;
     
     return {
-      name: "New Day Coin",
+      name: "Case Study 005 — New Day",
       symbol: "NDC", 
-      uri: "ipfs://bafybeigoxzqzbnxsn35vq7lls3ljxdcwjafxvbvkivprsodzrptpiguysy" as ValidMetadataURI, // Example metadata URI
+      uri: "https://arweave.net/6-QOxHXAK4wJ8s6I84FCEHJ-naFmwcP3uhwf1DhFUXI" as ValidMetadataURI,
       payoutRecipient: address as Address,
       chainId: baseSepolia.id,
       currency: DeployCurrency.ETH, // Using ETH since ZORA is not supported on Base Sepolia
