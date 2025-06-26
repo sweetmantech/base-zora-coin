@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAccount } from 'wagmi';
 import { useWriteContract, useSimulateContract, useWaitForTransactionReceipt } from 'wagmi';
 import { createCoinCall, DeployCurrency, ValidMetadataURI } from '@zoralabs/coins-sdk';
@@ -12,24 +12,50 @@ export function CreateCoin() {
   const [isCreating, setIsCreating] = useState(false);
 
   // Hard-coded coin parameters for testing
-  const coinParams = {
-    name: "New Day Coin",
-    symbol: "NDC", 
-    uri: "ipfs://bafybeigoxzqzbnxsn35vq7lls3ljxdcwjafxvbvkivprsodzrptpiguysy" as ValidMetadataURI, // Example metadata URI
-    payoutRecipient: address as Address,
-    chainId: baseSepolia.id,
-    currency: DeployCurrency.ETH, // Using ETH since ZORA is not supported on Base Sepolia
-  };
+  const coinParams = useMemo(() => {
+    if (!address) return null;
+    
+    return {
+      name: "New Day Coin",
+      symbol: "NDC", 
+      uri: "ipfs://bafybeigoxzqzbnxsn35vq7lls3ljxdcwjafxvbvkivprsodzrptpiguysy" as ValidMetadataURI, // Example metadata URI
+      payoutRecipient: address as Address,
+      chainId: baseSepolia.id,
+      currency: DeployCurrency.ETH, // Using ETH since ZORA is not supported on Base Sepolia
+    };
+  }, [address]);
 
   // Get the contract call configuration
-  const contractCallParams = createCoinCall(coinParams);
+  const contractCallParams = useMemo(() => {
+    if (!coinParams) return null;
+    
+    try {
+      const params = createCoinCall(coinParams);
+      console.log('Contract call params:', params);
+      return params;
+    } catch (error) {
+      console.error('Error creating coin call:', error);
+      return null;
+    }
+  }, [coinParams]);
 
   // Simulate the contract call
-  const { data: simulateData, error: simulateError } = useSimulateContract({
+  const { data: simulateData, error: simulateError, isLoading: isSimulating } = useSimulateContract({
     ...contractCallParams,
     query: {
-      enabled: isConnected && !!address,
+      enabled: isConnected && !!address && !!contractCallParams,
     },
+  });
+
+  // Add logging for debugging
+  console.log('CreateCoin Debug:', {
+    isConnected,
+    address,
+    coinParams,
+    contractCallParams,
+    simulateData,
+    simulateError,
+    isSimulating
   });
 
   // Write contract hook
@@ -49,11 +75,20 @@ export function CreateCoin() {
   });
 
   const handleCreateCoin = async () => {
-    if (!simulateData || !address) return;
+    if (!address) return;
     
     setIsCreating(true);
     try {
-      writeContract(simulateData.request);
+      if (simulateData) {
+        // Use simulation data if available
+        writeContract(simulateData.request);
+      } else {
+        // Proceed without simulation
+        console.log('Proceeding without simulation...');
+        writeContract({
+          ...contractCallParams,
+        });
+      }
     } catch (error) {
       console.error('Error creating coin:', error);
     } finally {
@@ -77,11 +112,11 @@ export function CreateCoin() {
       <div className="space-y-3 mb-6">
         <div className="text-sm">
           <span className="font-medium text-gray-600">Name:</span>
-          <span className="ml-2">{coinParams.name}</span>
+          <span className="ml-2">{coinParams?.name || 'New Day Coin'}</span>
         </div>
         <div className="text-sm">
           <span className="font-medium text-gray-600">Symbol:</span>
-          <span className="ml-2">{coinParams.symbol}</span>
+          <span className="ml-2">{coinParams?.symbol || 'NDC'}</span>
         </div>
         <div className="text-sm">
           <span className="font-medium text-gray-600">Network:</span>
@@ -97,10 +132,29 @@ export function CreateCoin() {
         </div>
       </div>
 
-      {simulateError && (
+      {!contractCallParams && address && (
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-600">
-            Simulation Error: {simulateError.message}
+            ❌ Failed to prepare contract parameters. Check console for details.
+          </p>
+        </div>
+      )}
+
+      {simulateError && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-600">
+            ⚠️ Simulation Warning: {simulateError.message}
+          </p>
+          <p className="text-xs text-yellow-500 mt-1">
+            You can still try to deploy, but the transaction might fail.
+          </p>
+        </div>
+      )}
+
+      {isSimulating && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-600">
+            🔄 Simulating transaction...
           </p>
         </div>
       )}
@@ -127,15 +181,16 @@ export function CreateCoin() {
       <button
         onClick={handleCreateCoin}
         disabled={
-          !simulateData || 
+          !address || 
           isCreating || 
           isWritePending || 
-          isConfirming ||
-          !!simulateError
+          isConfirming
         }
         className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
-          !simulateData || isCreating || isWritePending || isConfirming || !!simulateError
+          !address || isCreating || isWritePending || isConfirming
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : simulateError
+            ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md hover:shadow-lg'
             : 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg'
         }`}
       >
@@ -143,10 +198,12 @@ export function CreateCoin() {
           'Confirming Transaction...'
         ) : isWritePending || isCreating ? (
           'Creating Coin...'
+        ) : isSimulating ? (
+          'Simulating... (Click to proceed anyway)'
         ) : simulateError ? (
-          'Cannot Deploy (Error)'
-        ) : !simulateData ? (
-          'Preparing Transaction...'
+          'Deploy Anyway (Simulation Failed)'
+        ) : simulateData ? (
+          'Deploy Coin on Zora'
         ) : (
           'Deploy Coin on Zora'
         )}
