@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useSwitchChain } from 'wagmi';
 import { useWriteContract, useSimulateContract, useWaitForTransactionReceipt } from 'wagmi';
 
 import { createCoinCall, DeployCurrency, ValidMetadataURI } from '@zoralabs/coins-sdk';
@@ -9,8 +9,9 @@ import { baseSepolia } from 'wagmi/chains';
 import { Address } from 'viem';
 
 export function CreateCoin() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const [isCreating, setIsCreating] = useState(false);
+  const { switchChain, isPending: isSwitchingChain } = useSwitchChain();
 
   // Hard-coded coin parameters for testing
   const coinParams = useMemo(() => {
@@ -63,11 +64,15 @@ export function CreateCoin() {
   console.log('CreateCoin Debug:', {
     isConnected,
     address,
+    currentChain: chain,
+    targetChain: baseSepolia,
+    isCorrectChain: chain?.id === baseSepolia.id,
     coinParams,
     contractCallParams,
     simulateData,
     simulateError,
-    isSimulating
+    isSimulating,
+    isSwitchingChain
   });
 
   // Write contract hook
@@ -88,6 +93,19 @@ export function CreateCoin() {
 
   const handleCreateCoin = async () => {
     if (!address || !contractCallParams) return;
+    
+    // Check if we're on the correct chain (Base Sepolia)
+    if (chain?.id !== baseSepolia.id) {
+      console.log(`Switching from chain ${chain?.id} to Base Sepolia (${baseSepolia.id})`);
+      try {
+        await switchChain({ chainId: baseSepolia.id });
+        // The transaction will be triggered by the chain change effect
+        return;
+      } catch (error) {
+        console.error('Error switching chain:', error);
+        return;
+      }
+    }
     
     setIsCreating(true);
     try {
@@ -129,8 +147,14 @@ export function CreateCoin() {
           <span className="ml-2">{coinParams?.symbol || 'NDC'}</span>
         </div>
         <div className="text-sm">
-          <span className="font-medium text-gray-600">Network:</span>
+          <span className="font-medium text-gray-600">Target Network:</span>
           <span className="ml-2">Base Sepolia (Testnet)</span>
+        </div>
+        <div className="text-sm">
+          <span className="font-medium text-gray-600">Current Network:</span>
+          <span className={`ml-2 ${chain?.id === baseSepolia.id ? 'text-green-600' : 'text-orange-600'}`}>
+            {chain?.name || 'Unknown'} {chain?.id === baseSepolia.id ? '✅' : '⚠️'}
+          </span>
         </div>
         <div className="text-sm">
           <span className="font-medium text-gray-600">Currency:</span>
@@ -146,6 +170,17 @@ export function CreateCoin() {
         <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
           <p className="text-sm text-red-600">
             ❌ Failed to prepare contract parameters. Check console for details.
+          </p>
+        </div>
+      )}
+
+      {chain?.id !== baseSepolia.id && isConnected && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-600">
+            ⚠️ Wrong Network: You&apos;re connected to {chain?.name || 'Unknown'}
+          </p>
+          <p className="text-xs text-yellow-500 mt-1">
+            Click the button below to switch to Base Sepolia and deploy your coin.
           </p>
         </div>
       )}
@@ -194,20 +229,27 @@ export function CreateCoin() {
           !address || 
           isCreating || 
           isWritePending || 
-          isConfirming
+          isConfirming ||
+          isSwitchingChain
         }
         className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
-          !address || isCreating || isWritePending || isConfirming
+          !address || isCreating || isWritePending || isConfirming || isSwitchingChain
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            : chain?.id !== baseSepolia.id
+            ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg'
             : simulateError
             ? 'bg-orange-500 hover:bg-orange-600 text-white shadow-md hover:shadow-lg'
             : 'bg-blue-500 hover:bg-blue-600 text-white shadow-md hover:shadow-lg'
         }`}
       >
-        {isConfirming ? (
+        {isSwitchingChain ? (
+          'Switching Network...'
+        ) : isConfirming ? (
           'Confirming Transaction...'
         ) : isWritePending || isCreating ? (
           'Creating Coin...'
+        ) : chain?.id !== baseSepolia.id ? (
+          'Switch to Base Sepolia & Deploy'
         ) : isSimulating ? (
           'Simulating... (Click to proceed anyway)'
         ) : simulateError ? (
@@ -220,7 +262,10 @@ export function CreateCoin() {
       </button>
 
       <p className="text-xs text-gray-500 mt-3 text-center">
-        This will deploy a new ERC20 coin using the Zora protocol on Base Sepolia testnet
+        This will deploy a new ERC20 coin using the Zora protocol on Base Sepolia testnet.
+        {chain?.id !== baseSepolia.id && (
+          <span> Your wallet will be switched to the correct network automatically.</span>
+        )}
       </p>
     </div>
   );
