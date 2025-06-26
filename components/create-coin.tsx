@@ -31,15 +31,16 @@ export function CreateCoin() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [contractCallParams, setContractCallParams] = useState<any>(null);
   
-  // Create contract call params when coinParams change
+  // Create contract call params when coinParams change or chain changes
   useEffect(() => {
-    if (!coinParams) {
+    if (!coinParams || !isConnected || chain?.id !== baseSepolia.id) {
       setContractCallParams(null);
       return;
     }
     
     const createParams = async () => {
       try {
+        console.log('Creating contract call params for chain:', chain?.id);
         const params = await createCoinCall(coinParams);
         console.log('Contract call params:', params);
         setContractCallParams(params);
@@ -50,7 +51,7 @@ export function CreateCoin() {
     };
     
     createParams();
-  }, [coinParams]);
+  }, [coinParams, isConnected, chain?.id]);
 
   // Simulate the contract call
   const { data: simulateData, error: simulateError, isLoading: isSimulating } = useSimulateContract({
@@ -92,14 +93,17 @@ export function CreateCoin() {
   });
 
   const handleCreateCoin = async () => {
-    if (!address || !contractCallParams) return;
+    if (!address) {
+      console.error('No address available');
+      return;
+    }
     
     // Check if we're on the correct chain (Base Sepolia)
     if (chain?.id !== baseSepolia.id) {
       console.log(`Switching from chain ${chain?.id} to Base Sepolia (${baseSepolia.id})`);
       try {
         await switchChain({ chainId: baseSepolia.id });
-        // The transaction will be triggered by the chain change effect
+        // After switching, we'll wait for the useEffect to prepare contract params
         return;
       } catch (error) {
         console.error('Error switching chain:', error);
@@ -107,20 +111,48 @@ export function CreateCoin() {
       }
     }
     
-    setIsCreating(true);
-    try {
-      if (simulateData) {
-        // Use simulation data if available
-        writeContract(simulateData.request);
-      } else {
-        // Proceed without simulation - use the contract call params directly
-        console.log('Proceeding without simulation...');
-        writeContract(contractCallParams);
+    // If no contract params, try to prepare them now
+    if (!contractCallParams && coinParams) {
+      console.log('Preparing contract parameters...');
+      try {
+        const params = await createCoinCall(coinParams);
+        console.log('Contract call params prepared:', params);
+        setContractCallParams(params);
+        
+        // Now proceed with the transaction
+        setIsCreating(true);
+        if (params) {
+          writeContract(params);
+        }
+      } catch (error) {
+        console.error('Error preparing contract parameters:', error);
+        return;
+      } finally {
+        setIsCreating(false);
       }
-    } catch (error) {
-      console.error('Error creating coin:', error);
-    } finally {
-      setIsCreating(false);
+      return;
+    }
+    
+    // If we have contract params, proceed with transaction
+    if (contractCallParams) {
+      setIsCreating(true);
+      try {
+        if (simulateData) {
+          // Use simulation data if available
+          console.log('Using simulation data for transaction');
+          writeContract(simulateData.request);
+        } else {
+          // Proceed without simulation - use the contract call params directly
+          console.log('Proceeding without simulation...');
+          writeContract(contractCallParams);
+        }
+      } catch (error) {
+        console.error('Error creating coin:', error);
+      } finally {
+        setIsCreating(false);
+      }
+    } else {
+      console.error('No contract parameters available');
     }
   };
 
@@ -166,10 +198,18 @@ export function CreateCoin() {
         </div>
       </div>
 
-      {!contractCallParams && address && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">
-            ❌ Failed to prepare contract parameters. Check console for details.
+      {!contractCallParams && address && chain?.id === baseSepolia.id && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-600">
+            ⚠️ Contract parameters not ready. They will be prepared when you click deploy.
+          </p>
+        </div>
+      )}
+
+      {!contractCallParams && address && chain?.id !== baseSepolia.id && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-600">
+            ℹ️ Switch to Base Sepolia to prepare contract parameters.
           </p>
         </div>
       )}
@@ -230,10 +270,11 @@ export function CreateCoin() {
           isCreating || 
           isWritePending || 
           isConfirming ||
-          isSwitchingChain
+          isSwitchingChain ||
+          !coinParams
         }
         className={`w-full px-4 py-3 rounded-lg font-medium transition-colors ${
-          !address || isCreating || isWritePending || isConfirming || isSwitchingChain
+          !address || isCreating || isWritePending || isConfirming || isSwitchingChain || !coinParams
             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
             : chain?.id !== baseSepolia.id
             ? 'bg-yellow-500 hover:bg-yellow-600 text-white shadow-md hover:shadow-lg'
@@ -256,6 +297,8 @@ export function CreateCoin() {
           'Deploy Anyway (Simulation Failed)'
         ) : simulateData ? (
           'Deploy Coin on Zora'
+        ) : !contractCallParams ? (
+          'Prepare & Deploy Coin'
         ) : (
           'Deploy Coin on Zora'
         )}
