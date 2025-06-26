@@ -24,7 +24,8 @@ export function CreateCoin() {
   // Determine target network based on environment
   const VERCEL_ENV = process.env.NEXT_PUBLIC_VERCEL_ENV || "development";
   const targetNetwork = VERCEL_ENV === "production" ? base : baseSepolia;
-  const networkDisplayName = targetNetwork.id === base.id ? "Base (Mainnet)" : "Base Sepolia (Testnet)";
+  const networkDisplayName =
+    targetNetwork.id === base.id ? "Base (Mainnet)" : "Base Sepolia (Testnet)";
 
   // Hard-coded coin parameters for testing
   const coinParams = useMemo(() => {
@@ -36,7 +37,7 @@ export function CreateCoin() {
       uri: "ipfs://bafkreibs2did5lnnu4u4xwq72d6t5zgwvwzta6ppeoauyodq3joczg2rea" as ValidMetadataURI, // Actual metadata URI
       payoutRecipient: address as Address,
       chainId: targetNetwork.id,
-      currency: DeployCurrency.ETH, // Using ETH since ZORA is not supported on Base Sepolia
+      currency: DeployCurrency.ZORA,
     };
   }, [address, targetNetwork.id]);
 
@@ -256,8 +257,8 @@ export function CreateCoin() {
             {chain?.name || "Unknown"}
           </p>
           <p className="text-xs text-yellow-500 mt-1">
-            Click the button below to switch to {targetNetwork.name} and deploy your
-            coin.
+            Click the button below to switch to {targetNetwork.name} and deploy
+            your coin.
           </p>
         </div>
       )}
@@ -343,7 +344,8 @@ export function CreateCoin() {
       </button>
 
       <p className="text-xs text-gray-500 mt-3 text-center">
-        This will deploy a new ERC20 coin using the Zora protocol on {networkDisplayName}.
+        This will deploy a new ERC20 coin using the Zora protocol on{" "}
+        {networkDisplayName}.
         {chain?.id !== targetNetwork.id && (
           <span>
             {" "}
