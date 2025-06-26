@@ -2,6 +2,7 @@
 
 import { usePrivy } from '@privy-io/react-auth';
 import { WalletInfo } from '@/components/wallet-info';
+import { CreateCoin } from '@/components/create-coin';
 
 export default function Home() {
   const { ready, authenticated, user, login, logout } = usePrivy();
@@ -29,6 +30,11 @@ export default function Home() {
         {/* Wagmi wallet information component */}
         <div className="w-full max-w-md">
           <WalletInfo />
+        </div>
+
+        {/* Zora coin deployment component */}
+        <div className="w-full max-w-md">
+          <CreateCoin />
         </div>
         
         <button
