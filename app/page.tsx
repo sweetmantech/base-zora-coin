@@ -1,6 +1,7 @@
 'use client';
 
 import { usePrivy } from '@privy-io/react-auth';
+import { WalletInfo } from '@/components/wallet-info';
 
 export default function Home() {
   const { ready, authenticated, user, login, logout } = usePrivy();
@@ -18,12 +19,17 @@ export default function Home() {
   if (authenticated && user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-                 <div className="text-center">
-           <h1 className="text-3xl font-bold mb-4">Welcome!</h1>
-           <p className="text-lg text-gray-600 mb-2">
-             Connected with: {user.wallet?.address}
-           </p>
-         </div>
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">Welcome!</h1>
+          <p className="text-lg text-gray-600 mb-2">
+            Connected with: {user.wallet?.address}
+          </p>
+        </div>
+        
+        {/* Wagmi wallet information component */}
+        <div className="w-full max-w-md">
+          <WalletInfo />
+        </div>
         
         <button
           onClick={logout}
@@ -38,12 +44,12 @@ export default function Home() {
   // User is not authenticated - show login button
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-             <div className="text-center">
-         <h1 className="text-4xl font-bold mb-4">Case Study 005 — New Day</h1>
-         <p className="text-lg text-gray-600 mb-8">
-           deploy the coin on zora
-         </p>
-       </div>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold mb-4">Case Study 005 — New Day</h1>
+        <p className="text-lg text-gray-600 mb-8">
+          deploy the coin on zora
+        </p>
+      </div>
       
       <button
         onClick={login}
@@ -51,6 +57,11 @@ export default function Home() {
       >
         Connect Wallet
       </button>
+      
+      {/* Show Wagmi component even when not connected to demonstrate it's working */}
+      <div className="w-full max-w-md">
+        <WalletInfo />
+      </div>
     </div>
   );
 }
