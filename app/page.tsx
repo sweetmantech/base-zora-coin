@@ -38,12 +38,12 @@ export default function Home() {
   // User is not authenticated - show login button
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Connect Your Wallet</h1>
-        <p className="text-lg text-gray-600 mb-8">
-          Connect with your external wallet to get started
-        </p>
-      </div>
+             <div className="text-center">
+         <h1 className="text-4xl font-bold mb-4">Case Study 005 — New Day</h1>
+         <p className="text-lg text-gray-600 mb-8">
+           deploy the coin on zora
+         </p>
+       </div>
       
       <button
         onClick={login}
