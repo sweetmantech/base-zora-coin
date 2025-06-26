@@ -18,15 +18,12 @@ export default function Home() {
   if (authenticated && user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">Welcome!</h1>
-          <p className="text-lg text-gray-600 mb-2">
-            Connected with: {user.wallet?.address}
-          </p>
-          <p className="text-sm text-gray-500">
-            Wallet Type: {user.wallet?.walletClientType}
-          </p>
-        </div>
+                 <div className="text-center">
+           <h1 className="text-3xl font-bold mb-4">Welcome!</h1>
+           <p className="text-lg text-gray-600 mb-2">
+             Connected with: {user.wallet?.address}
+           </p>
+         </div>
         
         <button
           onClick={logout}
