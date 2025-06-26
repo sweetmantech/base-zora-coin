@@ -1,7 +1,7 @@
 'use client';
 
 import { PrivyProvider } from '@privy-io/react-auth';
-import { WagmiProvider, cookieToInitialState } from 'wagmi';
+import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from '@/lib/wagmi';
 
@@ -10,15 +10,11 @@ const queryClient = new QueryClient()
 
 export default function Providers({
   children,
-  cookie,
 }: {
   children: React.ReactNode;
-  cookie?: string | null;
 }) {
-  const initialState = cookieToInitialState(config, cookie);
-
   return (
-    <WagmiProvider config={config} initialState={initialState}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <PrivyProvider
           appId={process.env.NEXT_PUBLIC_PRIVY_ID!}
